@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html style="height: 100%;">
+
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body style="height: 100%; margin: 0;">
+    <div id="map" style="height: 100%;"></div>
+    <script>
+        let map = L.map('map', {zoomSnap: 0.5, zoomDelta:0.5});
+        L.tileLayer('img/{z}/{y}_{x}.jpg', {
+            maxZoom: 7,
+        }).addTo(map);
+        
+        const ZoomViewer = L.Control.extend({
+		onAdd() {
+			const container = L.DomUtil.create('div');
+			const gauge = L.DomUtil.create('div');
+			container.style.width = '200px';
+			container.style.background = 'rgba(255,255,255,0.5)';
+			container.style.textAlign = 'left';
+			map.on('zoomstart zoom zoomend', (ev) => {
+				gauge.innerHTML = `Zoom level: ${map.getZoom()}`;
+			});
+			container.appendChild(gauge);
+			return container;
+		}
+	});
+
+	const zoomViewerControl = (new ZoomViewer()).addTo(map);
+
+    map.setView([0, 0], 2);
+    </script>
+</body>
+
+</html>
