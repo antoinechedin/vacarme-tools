@@ -11,7 +11,7 @@
 <body style="height: 100%; margin: 0;">
     <div id="map" style="height: 100%;"></div>
     <script>
-        let map = L.map('map', {zoomSnap: 0.5, zoomDelta:0.5});
+        let map = L.map('map', {zoomSnap: 1, zoomDelta:1});
         L.tileLayer('img/{z}/{y}_{x}.jpg', {
             maxZoom: 7,
         }).addTo(map);

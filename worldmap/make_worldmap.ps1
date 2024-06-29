@@ -38,7 +38,7 @@ $Sizes = @(
 )
 
 # TODO: automatically compute Divisors
-$Divisors = @(
+<# $Divisors = @(
     @{x = 1; y = 1 },
     @{x = 2; y = 2 },
     @{x = 4; y = 3 },
@@ -47,6 +47,16 @@ $Divisors = @(
     @{x = 32; y = 24 },
     @{x = 64; y = 48 },
     @{x = 127; y = 95 }
+) #>
+$Divisors = @(
+    @{x = 1; y = 1 },
+    @{x = 2; y = 2 },
+    @{x = 4; y = 4 },
+    @{x = 8; y = 8 },
+    @{x = 16; y = 16 },
+    @{x = 32; y = 32 },
+    @{x = 64; y = 64 },
+    @{x = 128; y = 128 }
 )
 
 # Prepare magick command params
@@ -61,15 +71,16 @@ if (8 -eq $zoomLevel) {
         $Extent = @{x = $Divisor.x * $Sizes[$i]; y = $Divisor.y * $Sizes[$i] }
         $Scale = @{x = $Extent.x / $Pow ; y = $Extent.y / $Pow }
 
-        if (($null -eq $PrevExtent) -or ($PrevExtent.x -ne $Extent.x) -or ($PrevExtent.y -ne $Extent.y)) {
+        <# if (($null -eq $PrevExtent) -or ($PrevExtent.x -ne $Extent.x) -or ($PrevExtent.y -ne $Extent.y)) {
             $LevelParams += "mpr:map", "-extent", "$($Extent.x)x$($Extent.y)"
             if ($i -lt $Divisors.Length - 1) {
                 $LevelParams += "-write"
             }
-        }
-
+        } #>
+        
+        $LevelParams += "mpr:tmp"
         if (($Scale.x -ne $Extent.x) -or ($Scale.y -ne $Extent.y)) {
-            $LevelParams += "mpr:tmp", "-scale", "$($Scale.x)x$($Scale.y)"
+            $LevelParams += "-scale", "$($Scale.x)x$($Scale.y)"
             if ($i -lt $Divisors.Length - 1) {
                 $LevelParams += "-write"
             }
@@ -91,7 +102,7 @@ else {
     $Extent = @{x = $Divisor.x * $Sizes[$i]; y = $Divisor.y * $Sizes[$i] }
     $Scale = @{x = $Extent.x / $Pow ; y = $Extent.y / $Pow }
 
-    $LevelParams += "-extent", "$($Extent.x)x$($Extent.y)", "-scale", "$($Scale.x)x$($Scale.y)", ".\img\$i.jpg"
+    $LevelParams += <# "-extent", "$($Extent.x)x$($Extent.y)", #> "-scale", "$($Scale.x)x$($Scale.y)", ".\img\$i.jpg"
 }
 
 $null = New-Item -ItemType Directory -Force -Path .\img
