@@ -74,7 +74,7 @@
             }
         ];
 
-        function onEachFeature(feature, layer) {
+        function onEachButton(feature, layer) {
             if (feature.properties && feature.properties.url) {
                 layer.on('click', (ev) => {
                     const link = L.DomUtil.create('a')
@@ -90,11 +90,48 @@
             }
         }
 
-        let buttonsLayer = L.geoJSON(buttonFeature, { style: buttonsStyle, onEachFeature: onEachFeature });
+        map.setView([0, 0], 2);
+
+
+        let buttonsLayer = L.geoJSON(buttonFeature, { style: buttonsStyle, onEachFeature: onEachButton });
         map.on('zoomend', (ev) => buttonsLayer.resetStyle())
         map.addLayer(buttonsLayer);
 
-        map.setView([0, 0], 2);
+        const scaleRectFeatures = [
+            {
+                type: 'Feature',
+                properties: {
+                    zoom: 4,
+                    url: 'http://89.168.46.40/vacarme/les-royaumes-du-nord/les-comtes-doxhenam/'
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: rectToCoords([[20.0, -10.0], [53.0, -28.0]])
+                }
+            }
+        ]
+        let isDragging = false
+        let startLatLng
+
+        let topleft = L.latLng(-10, 20);
+        let bottomRight = L.latLng(-28, 53);
+        let rectLatLngBounds = L.latLngBounds(topleft, bottomRight);
+        let rectLayer = L.rectangle(rectLatLngBounds, { color: '#FF0000' });
+        rectLayer.on('mousedown', (e) => {
+            isDragging = true;
+            startLatLng = e.latlng;
+        });
+        rectLayer.on('mouseup', (e) => {
+            isDragging = false
+        });
+        rectLayer.addTo(map);
+
+        let topLeftMarker = L.marker(topleft, { draggable: true });
+        topLeftMarker.on('drag', (e) => {
+            console.log(e);
+            rectLayer.setBounds(L.latLngBounds(e.latlng, bottomRight));
+        });
+        topLeftMarker.addTo(map);
     </script>
 </body>
 
