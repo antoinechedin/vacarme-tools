@@ -11,29 +11,38 @@
 <body style="height: 100%; margin: 0;">
     <div id="map" style="height: 100%;"></div>
     <script>
-        let map = L.map('map', {zoomSnap: 1, zoomDelta:1});
-        L.tileLayer('img/{z}/{y}_{x}.jpg', {
+        let map = L.map('map', { zoomSnap: 0.1, zoomDelta: 1 });
+
+        L.tileLayer('img/0_map_layer/{z}/{y}_{x}.jpg', {
             maxZoom: 7,
+            zIndex: 1,
         }).addTo(map);
-        
+
+        L.tileLayer('img/1_tag_layer/{z}/{y}_{x}.png', {
+            minZoom: 0,
+            maxZoom: 7,
+            zIndex: 5,
+            errorTileUrl: "transparent.png"
+        }).addTo(map);
+
         const ZoomViewer = L.Control.extend({
-		onAdd() {
-			const container = L.DomUtil.create('div');
-			const gauge = L.DomUtil.create('div');
-			container.style.width = '200px';
-			container.style.background = 'rgba(255,255,255,0.5)';
-			container.style.textAlign = 'left';
-			map.on('zoomstart zoom zoomend', (ev) => {
-				gauge.innerHTML = `Zoom level: ${map.getZoom()}`;
-			});
-			container.appendChild(gauge);
-			return container;
-		}
-	});
+            onAdd() {
+                const container = L.DomUtil.create('div');
+                const gauge = L.DomUtil.create('div');
+                container.style.width = '200px';
+                container.style.background = 'rgba(255,255,255,0.5)';
+                container.style.textAlign = 'left';
+                map.on('zoomstart zoom zoomend', (ev) => {
+                    gauge.innerHTML = `Zoom level: ${map.getZoom()}`;
+                });
+                container.appendChild(gauge);
+                return container;
+            }
+        });
 
-	const zoomViewerControl = (new ZoomViewer()).addTo(map);
+        const zoomViewerControl = (new ZoomViewer()).addTo(map);
 
-    map.setView([0, 0], 2);
+        map.setView([0, 0], 2);
     </script>
 </body>
 

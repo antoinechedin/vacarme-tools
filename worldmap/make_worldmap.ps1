@@ -1,30 +1,53 @@
 Push-Location $PSScriptRoot
 $Magick = ".\..\bin\magick.exe"
 
-$files = Get-ChildItem -File -Path ./* -Include ("*.png", "*.jpg", "*.jpeg")
+# Layers choice
+$layers = Get-ChildItem -Directory -Path ./* -Filter *_layer
 
-if ($null -eq $files) {
+if ($null -eq $layers) {
+    throw [System.IO.FileNotFoundException] "Couldn't find any map layers"
+}
+
+if ($layers.Count -gt 1) {
+    $layerChoice = [System.Management.Automation.Host.ChoiceDescription[]](@())
+    for ($i = 0; $i -lt $layers.Count; $i++) {
+        $layerChoice += New-Object System.Management.Automation.Host.ChoiceDescription("&$($layers[$i].Name)")
+    }
+
+    $layerDirectory = $layers[$Host.Ui.PromptForChoice("Map", "Select a layer", $layerChoice, 0)]
+}
+else {
+    $layerDirectory = $layers[0]
+}
+
+
+# Picture choice
+$pictures = Get-ChildItem -File -Path ./$($layerDirectory.Name)/* -Include "*.png", "*.jpg", "*.jpeg"
+
+if ($null -eq $pictures) {
     throw [System.IO.FileNotFoundException] "World map file not found."
 }
 
-if ($files.Count -gt 1) {
-    $mapChoice = [System.Management.Automation.Host.ChoiceDescription[]](@())
-    for ($i = 0; $i -lt $files.Count; $i++) {
-        $mapChoice += ((New-Object System.Management.Automation.Host.ChoiceDescription("$($files[$i].Name) &$i", "$($files[$i].Name)")))
+if ($pictures.Count -gt 1) {
+    $pictureChoice = [System.Management.Automation.Host.ChoiceDescription[]](@())
+    for ($i = 0; $i -lt $pictures.Count; $i++) {
+        $pictureChoice += New-Object System.Management.Automation.Host.ChoiceDescription("&$($pictures[$i].Name)")
     }
 
-    $mapFile = $files[$Host.Ui.PromptForChoice("Map", "Choose the world map you want to use", $mapChoice, 0)].Name
+    $pictureFile = $pictures[$Host.Ui.PromptForChoice("Map", "Select a picture", $pictureChoice, 0)]
 }
 else {
-    $mapFile = $files[0]
+    $pictureFile = $pictures[0]
 }
-$zoomChoice = [System.Management.Automation.Host.ChoiceDescription[]](@())
-for ($i = 0; $i -lt 8; $i++) {
-    $zoomChoice += ((New-Object System.Management.Automation.Host.ChoiceDescription("Zoom &$i", "Zoom $i")))
-}
-$zoomChoice += ((New-Object System.Management.Automation.Host.ChoiceDescription("&All", "All")))
 
-$zoomLevel = $Host.Ui.PromptForChoice("Zoom", "Choose the zoom level you want to create", $zoomChoice, 8)
+# Zoom level choice
+$zoomLevelChoice = [System.Management.Automation.Host.ChoiceDescription[]](@())
+for ($i = 0; $i -lt 8; $i++) {
+    $zoomLevelChoice += ((New-Object System.Management.Automation.Host.ChoiceDescription("Zoom &$i", "Zoom $i")))
+}
+$zoomLevelChoice += ((New-Object System.Management.Automation.Host.ChoiceDescription("&All", "All")))
+$zoomLevel = $Host.Ui.PromptForChoice("Zoom", "Select a zoom level", $zoomLevelChoice, 8)
+
 
 $Sizes = @(
     32768,
@@ -60,9 +83,10 @@ $Divisors = @(
 )
 
 # Prepare magick command params
-$PrevExtent = $null
-$LevelParams = @(".\$mapFile")
+# $PrevExtent = $null
+$LevelParams = @(".\$($layerDirectory.Name)\$($pictureFile.Name)")
 
+# All zoom export
 if (8 -eq $zoomLevel) {
     $LevelParams += "-write"
     for ($i = 0; $i -lt $Divisors.Length; $i++) {
@@ -86,13 +110,13 @@ if (8 -eq $zoomLevel) {
             }
         }
 
-        $LevelParams += ".\img\$i.jpg"
+        $LevelParams += ".\$($layerDirectory.Name)\$i$($pictureFile.Extension)"
     
         if ($i -lt $Divisors.Length - 1) {
             $LevelParams += "+delete"
         }
     
-        $PrevExtent = $Extent
+        # $PrevExtent = $Extent
     }
 }
 else {
@@ -102,10 +126,10 @@ else {
     $Extent = @{x = $Divisor.x * $Sizes[$i]; y = $Divisor.y * $Sizes[$i] }
     $Scale = @{x = $Extent.x / $Pow ; y = $Extent.y / $Pow }
 
-    $LevelParams += <# "-extent", "$($Extent.x)x$($Extent.y)", #> "-scale", "$($Scale.x)x$($Scale.y)", ".\img\$i.jpg"
+    $LevelParams += <# "-extent", "$($Extent.x)x$($Extent.y)", #> "-scale", "$($Scale.x)x$($Scale.y)", ".\img\$($layerDirectory.Name)\$i$($pictureFile.Extension)"
 }
 
-$null = New-Item -ItemType Directory -Force -Path .\img
+$null = New-Item -ItemType Directory -Force -Path .\img\$($layerDirectory.Name)
 
 Write-Host "Exporting world map in progress"
 & $Magick $LevelParams
@@ -115,8 +139,8 @@ Write-Host "Done"
 Write-Host "Updating world map tiles"
 $i = if ($zoomLevel -eq 8) { 0 } else { $zoomLevel }
 for (; $i -lt 8; $i++) {
-    $null = New-Item -ItemType Directory -Force -Path .\img\$i
-    & $Magick .\img\$i.jpg -crop 256x256 -set filename:title "%[fx:page.y/256]_%[fx:page.x/256]" +repage +adjoin .\img\$i\%[filename:title].jpg
+    $null = New-Item -ItemType Directory -Force -Path .\img\$($layerDirectory.Name)\$i
+    & $Magick .\img\$($layerDirectory.Name)\$i$($pictureFile.Extension) -quality 30 -crop 256x256 -set filename:title "%[fx:page.y/256]_%[fx:page.x/256]" +repage +adjoin .\img\$($layerDirectory.Name)\$i\%[filename:title]$($pictureFile.Extension)
     if ($zoomLevel -ne 8) {
         break
     }
